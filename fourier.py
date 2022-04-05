@@ -1,16 +1,14 @@
 import helper
 import wave
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gs
 import sys
 from matplotlib.widgets import Slider, TextBox
 
-winding_freq = 0 #initial windings/sec
 #consts
 AMP_SHIFT = 0 #shift the amplitude up/down this many units (usually 0)
-SLIDER_MIN = 0
-SLIDER_MAX = 20000
 
 using_file = False
 #Get file
@@ -58,8 +56,14 @@ print('Min signal amplitude:', min(g))
 
 #Calculate the magnitude of the center of the graph for every winding frequency
 print('Calculating fourier plot...')
-cent_mags = helper.calc_center_mags(g, np.linspace(t0, t1, tot_samples))
-print('Done!')
+start_time = time.process_time()
+cent_mags, end_freq, detected_freqs = helper.calc_center_mags(g, np.linspace(t0, t1, tot_samples))
+slider_min = 0
+slider_max = end_freq
+winding_freq = slider_min #initial windings/sec
+end_time = time.process_time()
+print(f'Done! ({end_time-start_time} seconds)')
+print('Frequencies detected (Hz):', str(detected_freqs)[1:-1])
 
 #Calculate real/imag coords of each sample using sample_amplitude*e^(-2*pi*i*f*t)
 reals, imags, center = helper.calc_complex(g, winding_freq, np.linspace(t0, t1, tot_samples))
@@ -93,7 +97,10 @@ wave_plt.set_title('Waveform Wrap')
 scat_wave_cent = wave_plt_cent.scatter(center.real, center.imag, s=50, c='#990000')
 inp_plot = inp_plt.plot(np.linspace(t0, t1, len(g)), g)
 inp_plt.set_title('Input Waveform')
-fourier_plot = fourier_plt.plot([i for i in range(1, 101)], cent_mags)
+fourier_plot = fourier_plt.plot([i for i in range(end_freq+1)], cent_mags)
+fourier_plt.vlines(detected_freqs, 0, max(cent_mags), linestyles='dashed')
+plt.xticks(list(plt.xticks()[0]) + detected_freqs)
+plt.xlim(left=0)
 fourier_plt.set_title('Fourier Plot (distance from center)')
 
 #frequency slider
@@ -101,8 +108,8 @@ axfreq = plt.axes([0.1, 0.25, 0.0225, 0.63])
 freq_slider = Slider(
         ax=axfreq,
         label="Winding Frequency (Hz)",
-        valmin=SLIDER_MIN,
-        valmax=SLIDER_MAX,
+        valmin=slider_min,
+        valmax=slider_max,
         valinit=winding_freq,
         orientation="vertical"
 )

@@ -3,6 +3,8 @@ import math
 import struct
 import numpy as np
 
+WIND_FREQ_SWEEP_MAX = 500
+
 #generates a waveform in the form of a list of intensity samples (-1 to 1) over 1 second
 #Each frequency in the frequencies list is composed, then the final result is normalized
 def create_waveform(frequencies : list, amp_shift: float):
@@ -64,20 +66,38 @@ def read_samples(wav, starting_sample, tot_samples):
     return samples
 
 #calculates the complex numbers for winding the function g at the given winding frequency throughout the given time interval
-def calc_complex(g, winding_freq, t_range):
+def calc_complex(g, winding_freq, t_range, calc_center_only = False):
     complex_vals = []
     for i in range(len(g)):
         t = t_range[i]
         g_of_t = g[i]
         complex_vals.append(g_of_t*cmath.exp(-2*cmath.pi*complex(0,1)*winding_freq*t))
     center = sum(complex_vals)/len(complex_vals)
-    reals = np.array([c.real for c in complex_vals])
-    imags = np.array([c.imag for c in complex_vals])
-    return (reals, imags, center)
+    if not calc_center_only:
+        reals = np.array([c.real for c in complex_vals])
+        imags = np.array([c.imag for c in complex_vals])
+        return (reals, imags, center)
+    else:
+        return center
 
 def calc_center_mags(g, t_range):
     center_mags = []
-    for winding_freq in range(1, 101):
-        center = calc_complex(g, winding_freq, t_range)[2]
+    for winding_freq in range(WIND_FREQ_SWEEP_MAX):
+        center = calc_complex(g, winding_freq, t_range, calc_center_only=True)
         center_mags.append(abs(center))
-    return center_mags
+    print(len(center_mags))
+    detect_thresh = max(center_mags)/4
+    maxima = find_local_maxima(center_mags, detect_thresh)
+    end = max(maxima)
+    if end < WIND_FREQ_SWEEP_MAX-int(end/10) and end > 10:
+        end += int(end/10)
+    elif end < WIND_FREQ_SWEEP_MAX-end:
+        end += end
+    return (center_mags[:end+1], end, maxima)
+
+def find_local_maxima(center_mags, detect_thresh):
+    maxima = []
+    for i in range(1, len(center_mags)):
+        if center_mags[i-1] < center_mags[i] and center_mags[i+1] < center_mags[i] and center_mags[i] >= detect_thresh:
+            maxima.append(i) #add one to turn the index into the frequency
+    return maxima
