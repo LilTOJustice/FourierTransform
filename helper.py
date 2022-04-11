@@ -3,8 +3,6 @@ import math
 import struct
 import numpy as np
 
-WIND_FREQ_SWEEP_MAX = 500
-
 #generates a waveform in the form of a list of intensity samples (-1 to 1) over 1 second
 #Each frequency in the frequencies list is composed, then the final result is normalized
 def create_waveform(frequencies : list, amp_shift: float):
@@ -41,9 +39,9 @@ def prompt_time_interval(duration):
 def prompt_waveform():
     frequencies = []
     while True:
-        frequency = input('Input a frequency to compose (can be float or int) or -1 to finish inputting frequencies:\n')
+        frequency = input('Input an integer frequency to compose or -1 to finish inputting frequencies:\n')
         try:
-            frequency = float(frequency.strip(' '))
+            frequency = int(frequency.strip(' '))
             if frequency == -1:
                 if len(frequencies) == 0:
                     print('Need at least one frequency!')
@@ -56,12 +54,23 @@ def prompt_waveform():
             print('Invalid frequency value found:', frequency)
     return frequencies
 
+def prompt_wind_freq_max():
+    while True:
+        wind_freq_max = input('Input an integer frequency for the fourier plot to search to: ')
+        try:
+            wind_freq_max = int(wind_freq_max.strip(' '))
+            if wind_freq_max <= 0:
+                raise Exception('')
+            return wind_freq_max
+        except:
+            print('Invalid frequency:', wind_freq_max)
+
 #Reads samples indexed by the starting sample and runs until the total samples in the range have been read
 def read_samples(wav, starting_sample, tot_samples):
     samples = []
     wav.setpos(starting_sample)
     for i in range(tot_samples):
-        wav_read = struct.unpack("<h", wav.readframes(1))[0] #reads backwards! must reverse to little endian (yep, looks like pythonstdlib reads wav bytes backwards :/)
+        wav_read = struct.unpack("<h", wav.readframes(1))[0]
         samples.append(wav_read)
     return samples
 
@@ -80,24 +89,36 @@ def calc_complex(g, winding_freq, t_range, calc_center_only = False):
     else:
         return center
 
-def calc_center_mags(g, t_range):
+def calc_center_mags(g, t_range, wind_freq_sweep_max):
     center_mags = []
-    for winding_freq in range(WIND_FREQ_SWEEP_MAX):
+    for winding_freq in range(1, wind_freq_sweep_max+1):
+        if winding_freq % 500 == 1:
+            print(f'Searching frequency range {winding_freq}-{min(winding_freq+499,wind_freq_sweep_max)} Hz / {wind_freq_sweep_max} Hz')
         center = calc_complex(g, winding_freq, t_range, calc_center_only=True)
         center_mags.append(abs(center))
-    print(len(center_mags))
     detect_thresh = max(center_mags)/4
     maxima = find_local_maxima(center_mags, detect_thresh)
-    end = max(maxima)
-    if end < WIND_FREQ_SWEEP_MAX-int(end/10) and end > 10:
-        end += int(end/10)
-    elif end < WIND_FREQ_SWEEP_MAX-end:
-        end += end
-    return (center_mags[:end+1], end, maxima)
+    if len(maxima): #if a maximum was found
+        end = max(maxima)
+        if end < wind_freq_sweep_max-int(end/10) and end > 10:
+            end += int(end/10)
+        elif end < wind_freq_sweep_max-end:
+            end += end
+        return (center_mags[:end], end, maxima)
+    else:
+        return (center_mags, len(center_mags)-1, maxima)
 
 def find_local_maxima(center_mags, detect_thresh):
     maxima = []
-    for i in range(1, len(center_mags)):
+    if len(center_mags) > 1: #left edge maxima
+        if center_mags[0] > center_mags[1] and center_mags[0] > detect_thresh:
+            maxima.append(1)
+    for i in range(1, len(center_mags)-1):
         if center_mags[i-1] < center_mags[i] and center_mags[i+1] < center_mags[i] and center_mags[i] >= detect_thresh:
-            maxima.append(i) #add one to turn the index into the frequency
+            maxima.append(i+1)
+    if len(center_mags) > 1: #right edge maxima
+        if center_mags[-1] > center_mags[-2] and center_mags[-1] > detect_thresh:
+            maxima.append(len(center_mags))
+    if len(center_mags) == 1 and center_mags[0] > detect_thresh:
+        maxima.append(1)
     return maxima
