@@ -71,7 +71,7 @@ def init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t0, t1, t
 
 
     freq_slider.on_changed(lambda val : update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t0, t1, tot_samples))
-    text_box.on_submit(lambda val: update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imag, g, t0, t1, tot_samples))
+    text_box.on_submit(lambda val: update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t0, t1, tot_samples))
 
     #Draw plot
     plt.get_current_fig_manager().full_screen_toggle()

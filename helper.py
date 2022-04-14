@@ -6,7 +6,7 @@ import numpy as np
 #generates a waveform in the form of a list of intensity samples (-1 to 1) over 1 second
 #Each frequency in the frequencies list is composed, then the final result is normalized
 def create_waveform(frequencies : list, amp_shift: float):
-    sample_rate = 44100 #use standard sample rate
+    sample_rate = 44100
     num_samples = int(sample_rate) #1 second
     g = [0 for i in range(num_samples)]
     for f in frequencies: #compose all frequencies
