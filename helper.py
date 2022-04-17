@@ -3,6 +3,8 @@ import math
 import struct
 import numpy as np
 
+neg_2_pi_i = -2*cmath.pi*complex(0,1)
+
 #generates a waveform in the form of a list of intensity samples (-1 to 1) over 1 second
 #Each frequency in the frequencies list is composed, then the final result is normalized
 def create_waveform(frequencies : list, amp_shift: float):
@@ -75,12 +77,13 @@ def read_samples(wav, starting_sample, tot_samples):
     return samples
 
 #calculates the complex numbers for winding the function g at the given winding frequency throughout the given time interval
-def calc_complex(g, winding_freq, t_range, calc_center_only = False):
+def calc_complex(g, f, t_range, calc_center_only = False):
+    neg_2_pi_i_f = neg_2_pi_i*f
     complex_vals = []
     for i in range(len(g)):
         t = t_range[i]
         g_of_t = g[i]
-        complex_vals.append(g_of_t*cmath.exp(-2*cmath.pi*complex(0,1)*winding_freq*t))
+        complex_vals.append(g_of_t*cmath.exp(neg_2_pi_i_f*t))
     center = sum(complex_vals)/len(complex_vals)
     if not calc_center_only:
         reals = np.array([c.real for c in complex_vals])
