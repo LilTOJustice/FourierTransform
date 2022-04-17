@@ -77,7 +77,7 @@ def read_samples(wav, starting_sample, tot_samples):
     return samples
 
 #calculates the complex numbers for winding the function g at the given winding frequency throughout the given time interval
-def calc_complex(g, f, t_range, calc_center_only = False):
+def calc_complex(g, f, t_range):
     neg_2_pi_i_f = neg_2_pi_i*f
     complex_vals = []
     for i in range(len(g)):
@@ -85,19 +85,25 @@ def calc_complex(g, f, t_range, calc_center_only = False):
         g_of_t = g[i]
         complex_vals.append(g_of_t*cmath.exp(neg_2_pi_i_f*t))
     center = sum(complex_vals)/len(complex_vals)
-    if not calc_center_only:
-        reals = np.array([c.real for c in complex_vals])
-        imags = np.array([c.imag for c in complex_vals])
-        return (reals, imags, center)
-    else:
-        return center
+    reals = np.array([c.real for c in complex_vals])
+    imags = np.array([c.imag for c in complex_vals])
+    return (reals, imags, center)
+
+def calc_complex_center(g, f, t_range):
+    neg_2_pi_i_f = neg_2_pi_i*f
+    complex_val_sum = complex(0,0)
+    for i in range(len(g)):
+        t = t_range[i]
+        g_of_t = g[i]
+        complex_val_sum += g_of_t*cmath.exp(neg_2_pi_i_f*t)
+    return complex_val_sum/len(g)
 
 def calc_center_mags(g, t_range, wind_freq_sweep_max):
     center_mags = []
     for winding_freq in range(1, wind_freq_sweep_max+1):
         if winding_freq % 500 == 1:
             print(f'Searching frequency range {winding_freq}-{min(winding_freq+499,wind_freq_sweep_max)} Hz / {wind_freq_sweep_max} Hz')
-        center = calc_complex(g, winding_freq, t_range, calc_center_only=True)
+        center = calc_complex_center(g, winding_freq, t_range)
         center_mags.append(abs(center))
     detect_thresh = max(center_mags)/4
     maxima = find_local_maxima(center_mags, detect_thresh)
