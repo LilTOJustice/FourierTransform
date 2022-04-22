@@ -4,21 +4,21 @@ import numpy as np
 from matplotlib.widgets import Slider, TextBox
 import helper
 
-def update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t0, t1, tot_samples): #update plot with new winding frequency, called whenever slider/text is changed/submitted
+def update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t_range): #update plot with new winding frequency, called whenever slider/text is changed/submitted
     if not freq_slider.active:
         return
     try:
         winding_freq = float(val)
     except:
         return
-    reals, imags, center = helper.calc_complex(g, winding_freq, np.linspace(t0, t1, tot_samples))
+    reals, imags, center = helper.calc_complex(g, winding_freq, t_range)
     scat_wave.set_offsets(np.c_[reals, imags])
     scat_wave_cent.set_offsets(np.c_[center.real, center.imag])
     freq_slider.set_active(False)
     freq_slider.set_val(winding_freq)
     freq_slider.set_active(True)
 
-def init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t0, t1, tot_samples):
+def init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t_range):
     #Setup plot
     winding_freq = 0
     plt.subplots_adjust(left=0.25,bottom=0.1)
@@ -47,7 +47,7 @@ def init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t0, t1, t
     scat_wave = wave_plt.scatter(reals, imags, s=1)
     wave_plt.set_title('Waveform Wrap')
     scat_wave_cent = wave_plt_cent.scatter(center.real, center.imag, s=50, c='#990000')
-    inp_plot = inp_plt.plot(np.linspace(t0, t1, len(g)), g)
+    inp_plot = inp_plt.plot(t_range, g)
     inp_plt.set_title('Input Waveform')
     fourier_plot = fourier_plt.plot([i for i in range(1, end_freq+1)], cent_mags)
     fourier_plt.vlines(detected_freqs, 0, max(cent_mags), linestyles='dashed')
@@ -70,8 +70,8 @@ def init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t0, t1, t
     text_box = TextBox(axbox, 'Jump to frequency (Hz)', initial=str(winding_freq))
 
 
-    freq_slider.on_changed(lambda val : update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t0, t1, tot_samples))
-    text_box.on_submit(lambda val: update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t0, t1, tot_samples))
+    freq_slider.on_changed(lambda val : update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t_range))
+    text_box.on_submit(lambda val: update(val, freq_slider, winding_freq, scat_wave, scat_wave_cent, center, reals, imags, g, t_range))
 
     #Draw plot
     plt.get_current_fig_manager().full_screen_toggle()

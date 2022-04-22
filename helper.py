@@ -105,8 +105,7 @@ def calc_center_mags(g, t_range, wind_freq_sweep_max):
             print(f'Searching frequency range {winding_freq}-{min(winding_freq+499,wind_freq_sweep_max)} Hz / {wind_freq_sweep_max} Hz')
         center = calc_complex_center(g, winding_freq, t_range)
         center_mags.append(abs(center))
-    detect_thresh = max(center_mags)/4
-    maxima = find_local_maxima(center_mags, detect_thresh)
+    maxima = find_local_maxima(center_mags)
     if len(maxima): #if a maximum was found
         end = max(maxima)
         if end < wind_freq_sweep_max-int(end/10) and end > 10:
@@ -117,17 +116,17 @@ def calc_center_mags(g, t_range, wind_freq_sweep_max):
     else:
         return (center_mags, len(center_mags)-1, maxima)
 
-def find_local_maxima(center_mags, detect_thresh):
+def find_local_maxima(center_mags):
     maxima = []
     if len(center_mags) > 1: #left edge maxima
-        if center_mags[0] > center_mags[1] and center_mags[0] > detect_thresh:
+        if center_mags[0] > center_mags[1]:
             maxima.append(1)
     for i in range(1, len(center_mags)-1):
-        if center_mags[i-1] < center_mags[i] and center_mags[i+1] < center_mags[i] and center_mags[i] >= detect_thresh:
+        if center_mags[i-1] < center_mags[i] and center_mags[i+1] < center_mags[i]:
             maxima.append(i+1)
     if len(center_mags) > 1: #right edge maxima
-        if center_mags[-1] > center_mags[-2] and center_mags[-1] > detect_thresh:
+        if center_mags[-1] > center_mags[-2]:
             maxima.append(len(center_mags))
-    if len(center_mags) == 1 and center_mags[0] > detect_thresh:
+    if len(center_mags) == 1:
         maxima.append(1)
     return maxima

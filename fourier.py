@@ -68,8 +68,9 @@ if __name__ == '__main__':
     else:
         print('No frequencies detected.')
 
+    t_range = np.linspace(t0,t1,tot_samples)
     #Calculate real/imag coords of each sample using sample_amplitude*e^(-2*pi*i*f*t)
-    reals, imags, center = helper.calc_complex(g, winding_freq, np.linspace(t0, t1, tot_samples))
+    reals, imags, center = helper.calc_complex(g, winding_freq, t_range)
 
     #Initialize matplot
-    plotter.init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t0, t1, tot_samples)
+    plotter.init(reals, imags, center, cent_mags, end_freq, detected_freqs, g, t_range)
