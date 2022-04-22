@@ -1,5 +1,5 @@
 # FourierTransform
-Uses matplotlib to plot the Symbolic (slow) Fourier Transform of a wave file over a time interval or a specified composition of sine waves.
+Uses matplotlib to plot the Discrete Visual (slow) Fourier Transform of a wave file over a time interval or a specified composition of sine waves.
 REQUIRES matplotlib AND numpy
 
 To load an existing .wav file:
